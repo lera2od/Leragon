@@ -1,0 +1,38 @@
+
+services:
+  db:
+    image: mariadb:latest
+    restart: always
+    volumes:
+      - db_data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: leragon
+      MYSQL_PASSWORD: leragon
+      MYSQL_DATABASE: leragon
+    networks: 
+      - app-network
+
+  web:
+    build: .
+    restart: always
+    environment:
+      APACHE_DOCUMENT_ROOT: /var/www/html/ 
+      DOCKER_GID: 968
+    ports:
+      - "3001:80"
+    volumes:
+      - ./app:/var/www/html/
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - db
+    user: "www-data" 
+    networks:
+      - app-network
+
+volumes:
+  db_data:
+
+networks:
+  app-network:
+    driver: bridge
