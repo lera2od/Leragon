@@ -2,7 +2,9 @@
 <h3>THIS PROJECT IS CURRENTLY IN DEVELOPMENT DON'T USE THIS</h3>
 <p>MATTER OF FACT DON'T USE ANYTHING I MAKE ANYWAY THEY ALL SUCK</p>
 </div>
-![leragonlogo]()
+
+![leragonlogo](https://raw.githubusercontent.com/lera2od/Leragon/refs/heads/main/leragonlogo.png)
+
 # leragon
 most peak docker manager built to suit my needs.
 
