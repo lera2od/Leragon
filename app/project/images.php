@@ -13,112 +13,75 @@
 <body>
     <?php include "../include/header.php"; ?>
 
-        <main class="main-content">
-            <div class="project-header-template">
-                <div class="breadcrumb">
-                    <a href="/">Projects</a>
-                    <span>›</span>
-                    <span><?php echo htmlspecialchars(ucfirst($projectName)); ?></span>
-                </div>
+    <main class="main-content">
+        <?php include "top.php"; ?>
+        <div class="tab-content images-tab">
+            <div class="container-list">
+                <?php
+                $Docker = new DockerManager();
+                $allImages = $Docker->listImages(true);
+                $images = [];
 
-                <h1 class="page-title"><?php echo htmlspecialchars(ucfirst($projectName)); ?></h1>
-
-                <div class="project-overview">
-                    <div class="project-header">
-                        <h3 class="project-title"><?php echo htmlspecialchars(ucfirst($projectName)); ?></h3>
-                        <?php if (!empty($projectDetails['status']) && strtolower($projectDetails['status']) === 'running'): ?>
-                            <span class="project-status status-running">Running</span>
-                        <?php else: ?>
-                            <span class="project-status status-stopped">Stopped</span>
-                        <?php endif; ?>
-                    </div>
-                    <div class="project-details"
-                        style="display: flex; align-items: center; justify-content: space-between;">
-                        <p><?php echo htmlspecialchars($ProjectData->get("description") ?? 'No description available'); ?>
-                        </p><button class="btn btn-secondary" onclick="setProjectDescription()"><i
-                                class="fas fa-edit"></i>
-                            <span>Edit Description</span></button>
-                    </div>
-                </div>
-
-                <div class="tabs">
-                    <a class="tab" href="/project/?name=<?= $projectName ?>">Containers</a>
-                    <a class="tab active" href="/project/images.php?name=<?= $projectName ?>">Images</a>
-                    <a class="tab">Networks</a>
-                    <a class="tab">Volumes</a>
-                    <a class="tab">Logs</a>
-                    <a class="tab">Settings</a>
-                </div>
-            </div>
-
-            <div class="tab-content images-tab">
-                <div class="container-list">
-                    <?php
-                    $Docker = new DockerManager();
-                    $allImages = $Docker->listImages(true);
-                    $images = [];
-
-                    foreach ($projectDetails['containers'] as $container) {
-                        $imageName = $container['image'];
-                        $image = array_filter($allImages, function ($img) use ($imageName) {
-                            return strpos($img['RepoTags'][0], $imageName) !== false;
-                        });
-                        $image = array_values($image);
-                        if (empty($image[0])) {
-                            continue;
-                        }
-                        $images[] = $image[0];
+                foreach ($projectDetails['containers'] as $container) {
+                    $imageName = $container['image'];
+                    $image = array_filter($allImages, function ($img) use ($imageName) {
+                        return strpos($img['RepoTags'][0], $imageName) !== false;
+                    });
+                    $image = array_values($image);
+                    if (empty($image[0])) {
+                        continue;
                     }
+                    $images[] = $image[0];
+                }
 
-                    foreach ($images as $image):
-                        $tags = $image['RepoTags'] ?? ['<none>:<none>'];
-                        $size = number_format($image['Size'] / (1024 * 1024), 2) . ' MB';
-                        $created = date('Y-m-d H:i:s', $image['Created']);
-                        $imageId = substr($image['Id'], 7, 12);
-                        ?>
-                        <div class="container-card image-card" data-id="<?php echo htmlspecialchars($image['Id']); ?>">
-                            <div class="container-details">
-                                <div style="display: flex; align-items: center; margin-bottom: 10px;">
-                                    <div class="container-icon"
-                                        style="background-image: <?= gradientFromText($tags[0]); ?>">
-                                        <i class="fas fa-cube"></i>
-                                    </div>
-                                    <div class="container-name-wrapper">
-                                        <?php foreach ($tags as $tag): ?>
-                                            <div class="container-name"><?php echo htmlspecialchars($tag); ?></div>
-                                        <?php endforeach; ?>
-                                    </div>
+                foreach ($images as $image):
+                    $tags = $image['RepoTags'] ?? ['<none>:<none>'];
+                    $size = number_format($image['Size'] / (1024 * 1024), 2) . ' MB';
+                    $created = date('Y-m-d H:i:s', $image['Created']);
+                    $imageId = substr($image['Id'], 7, 12);
+                    ?>
+                    <div class="container-card image-card" data-id="<?php echo htmlspecialchars($image['Id']); ?>">
+                        <div class="container-details">
+                            <div style="display: flex; align-items: center; margin-bottom: 10px;">
+                                <div class="container-icon" style="background-image: <?= gradientFromText($tags[0]); ?>">
+                                    <i class="fas fa-cube"></i>
                                 </div>
-                                <div class="container-info">
-                                    <span class="info-item">
-                                        <i class="fas fa-hashtag"></i>
-                                        <span class="image-id" title="Click to copy full ID" style="cursor:pointer;"
-                                            onclick="navigator.clipboard.writeText('<?php echo htmlspecialchars($image['Id']); ?>');">
-                                            <?php echo htmlspecialchars($imageId); ?>
-                                        </span>
-                                    </span>
-                                    <span class="info-item">
-                                        <i class="fas fa-weight-hanging"></i>
-                                        <?php echo htmlspecialchars($size); ?>
-                                    </span>
-                                    <span class="info-item">
-                                        <i class="fas fa-calendar"></i>
-                                        <?php echo htmlspecialchars($created); ?>
-                                    </span>
+                                <div class="container-name-wrapper">
+                                    <?php foreach ($tags as $tag): ?>
+                                        <div class="container-name"><?php echo htmlspecialchars($tag); ?></div>
+                                    <?php endforeach; ?>
                                 </div>
                             </div>
-                            <div class="container-actions">
-                                <button class="btn btn-danger"
-                                    onclick="removeImage('<?php echo htmlspecialchars($image['Id']); ?>')">
-                                    <i class="fas fa-trash"></i>
-                                    <span>Remove</span>
-                                </button>
+                            <div class="container-info">
+                                <span class="info-item">
+                                    <i class="fas fa-hashtag"></i>
+                                    <span class="image-id" title="Click to copy full ID" style="cursor:pointer;"
+                                        onclick="navigator.clipboard.writeText('<?php echo htmlspecialchars($image['Id']); ?>');">
+                                        <?php echo htmlspecialchars($imageId); ?>
+                                    </span>
+                                </span>
+                                <span class="info-item">
+                                    <i class="fas fa-weight-hanging"></i>
+                                    <?php echo htmlspecialchars($size); ?>
+                                </span>
+                                <span class="info-item">
+                                    <i class="fas fa-calendar"></i>
+                                    <?php echo htmlspecialchars($created); ?>
+                                </span>
                             </div>
                         </div>
-                    <?php endforeach; ?>
-                </div>
+                        <div class="container-actions">
+                            <button class="btn btn-danger"
+                                onclick="removeImage('<?php echo htmlspecialchars($image['Id']); ?>')">
+                                <i class="fas fa-trash"></i>
+                                <span>Remove</span>
+                            </button>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
             </div>
-        </main>
+        </div>
+    </main>
     </div>
     <script>
         async function removeImage(imageId) {

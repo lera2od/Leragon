@@ -1,5 +1,5 @@
 <?php
-require 'include/docker.php';
+require 'include/lib.php';
 
 $Docker = new DockerManager();
 ?>

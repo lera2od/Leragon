@@ -14,42 +14,7 @@
     <?php include "../include/header.php"; ?>
 
     <main class="main-content">
-        <div class="project-header-template">
-            <div class="breadcrumb">
-                <a href="/">Projects</a>
-                <span>›</span>
-                <span><?php echo htmlspecialchars(ucfirst($projectName)); ?></span>
-            </div>
-
-            <h1 class="page-title"><?php echo htmlspecialchars(ucfirst($projectName)); ?></h1>
-
-            <div class="project-overview">
-                <div class="project-header">
-                    <h3 class="project-title"><?php echo htmlspecialchars(ucfirst($projectName)); ?></h3>
-                    <?php if (!empty($projectDetails['status']) && strtolower($projectDetails['status']) === 'running'): ?>
-                        <span class="project-status status-running">Running</span>
-                    <?php else: ?>
-                        <span class="project-status status-stopped">Stopped</span>
-                    <?php endif; ?>
-                </div>
-                <div class="project-details"
-                    style="display: flex; align-items: center; justify-content: space-between;">
-                    <p><?php echo htmlspecialchars($ProjectData->get("description") ?? 'No description available'); ?>
-                    </p><button class="btn btn-secondary" onclick="setProjectDescription()"><i class="fas fa-edit"></i>
-                        <span>Edit Description</span></button>
-                </div>
-            </div>
-
-            <div class="tabs">
-                <a class="tab active" href="/project/?name=<?= $projectName ?>">Containers</a>
-                <a class="tab" href="/project/images.php?name=<?= $projectName ?>">Images</a>
-                <a class="tab">Networks</a>
-                <a class="tab">Volumes</a>
-                <a class="tab">Logs</a>
-                <a class="tab">Settings</a>
-            </div>
-        </div>
-
+        <?php include "top.php"; ?>
         <div class="tab-content containers-tab">
             <div class="action-bar">
                 <div class="action-buttons">
@@ -272,33 +237,7 @@
             overlay.style.zIndex = '100';
             document.body.appendChild(overlay);
         }
-
-        async function setProjectDescription() {
-            const currentDescription = '<?php echo htmlspecialchars($ProjectData->get("description") ?? 'No description available'); ?>';
-            const description = await promptModal('Set New Project Description', currentDescription, 'Description');
-            if (description) {
-                fetch('api.php', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ description: description, action: 'containerSetDescription', projectName: '<?php echo htmlspecialchars($projectName); ?>' })
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success === true) {
-                            toast.show('Project description updated successfully!', 'success');
-                            setTimeout(() => window.location.reload(), 1000);
-                        } else {
-                            toast.show('Failed to update project description.', 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        toast.show('Error updating project description.', 'error');
-                    });
-            }
-        }
+        
         async function removeContainer(containerId) {
             const result = await modal.show({
                 icon: 'trash',

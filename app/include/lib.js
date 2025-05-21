@@ -1,3 +1,4 @@
+/* MODAL */
 class Modal {
     constructor() {
         this.modalContainer = null;
@@ -82,8 +83,6 @@ class Modal {
     }
 }
 
-const modal = new Modal();
-
 function confirmModal(text) {
     return new Promise((resolve) => {
         modal.show({
@@ -138,3 +137,90 @@ function promptModal(text, defaultValue = '', innerText = text) {
         });
     });
 }
+
+/* TOAST */
+class Toast {
+    constructor() {
+        this.container = null;
+        this.initContainer();
+    }
+
+    initContainer() {
+        if (!this.container) {
+            this.container = document.createElement('div');
+            this.container.className = 'toast-container';
+            document.body.appendChild(this.container);
+        }
+    }
+
+    show(message, type = 'info', duration = 3000) {
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+
+        const icon = document.createElement('i');
+        switch (type) {
+            case 'success':
+                icon.className = 'fas fa-check-circle';
+                break;
+            case 'error':
+                icon.className = 'fas fa-exclamation-circle';
+                break;
+            default:
+                icon.className = 'fas fa-info-circle';
+        }
+
+        const messageSpan = document.createElement('span');
+        messageSpan.textContent = message;
+
+        toast.appendChild(icon);
+        toast.appendChild(messageSpan);
+        this.container.appendChild(toast);
+
+        toast.addEventListener('click', () => {
+            modal.show({
+                title: 'Toast Details',
+                icon: type === 'success' ? 'check-circle' :
+                    type === 'error' ? 'exclamation-circle' : 'info-circle',
+                content: `<div class="toast ${type}" style="position: static; transform: none; cursor: default;">
+            <i class="${icon.className}"></i>
+            <span>${message}</span>
+        </div>`,
+                buttons: [{
+                    icon: 'check',
+                    text: 'Close',
+                    class: 'btn-primary'
+                }]
+            });
+        });
+
+        return new Promise((resolve) => {
+            let timeLeft = duration;
+            let timeoutId;
+
+            const startTimer = () => {
+                timeoutId = setTimeout(() => {
+                    toast.classList.add('removing');
+                    toast.addEventListener('animationend', () => {
+                        this.container.removeChild(toast);
+                        resolve();
+                    });
+                }, timeLeft);
+            };
+
+            toast.addEventListener('mouseenter', () => {
+                clearTimeout(timeoutId);
+            });
+
+            toast.addEventListener('mouseleave', () => {
+                startTimer();
+            });
+
+            startTimer();
+        });
+    }
+}
+
+
+/* VARIABLES */
+const modal = new Modal();
+const toast = new Toast();

@@ -433,3 +433,26 @@ class ProjectData
         file_put_contents($_SERVER["DOCUMENT_ROOT"] . '/projects.json', json_encode($projectsJson));
     }
 }
+
+class Logger
+{
+    private $logFile;
+
+    public function __construct($logFile)
+    {
+        $this->logFile = $_SERVER["DOCUMENT_ROOT"] . "/logs/" . $logFile;
+
+        if (!is_dir($_SERVER["DOCUMENT_ROOT"] . "/logs")) {
+            mkdir($_SERVER["DOCUMENT_ROOT"] . "/logs", 0777, true);
+        }
+
+        if (!file_exists($this->logFile)) {
+            file_put_contents($this->logFile, "");
+        }
+    }
+
+    public function log($message, $level = "info")
+    {
+        file_put_contents($this->logFile, "[" . date("Y-m-d H:i:s") . "] [$level] $message\n", FILE_APPEND);
+    }
+}

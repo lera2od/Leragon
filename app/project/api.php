@@ -1,5 +1,5 @@
 <?php
-include "../include/docker.php";
+include "../include/lib.php";
 
 header('Content-Type: application/json');
 
@@ -84,5 +84,8 @@ try {
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()
-    ]);
+    ]);    
+
+    $Logger = new Logger("api.txt");
+    $Logger->log('API Error: ' . $e->getMessage(), 'ERR' );
 }
