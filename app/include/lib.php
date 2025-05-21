@@ -193,44 +193,60 @@ class DockerManager
      * @param int $tail Number of lines to return from the end of the logs
      * @return string Container logs
      */
-    public function getContainerLogs($containerId, $stdout = true, $stderr = true, $tail = 100)
+    public function getContainerLogs($containerId, $stdout = true, $stderr = true, $tail = 100, $timestamps = false)
     {
-        $query = [];
-        if ($stdout)
-            $query[] = 'stdout=1';
-        if ($stderr)
-            $query[] = 'stderr=1';
-        if ($tail)
-            $query[] = "tail={$tail}";
-
-        $queryString = !empty($query) ? '?' . implode('&', $query) : '';
-
-        $context = stream_context_create([
-            'socket' => [
-                'protocol' => 'unix',
-            ],
-            'http' => [
-                'method' => 'GET',
-                'ignore_errors' => true
-            ]
+        $query = http_build_query([
+            'stdout' => $stdout ? 1 : 0,
+            'stderr' => $stderr ? 1 : 0,
+            'tail' => $tail === 0 ? 'all' : $tail,
+            'timestamps' => $timestamps ? 1 : 0
         ]);
 
-        $url = "http://localhost/{$this->apiVersion}/containers/{$containerId}/logs{$queryString}";
-        $logs = file_get_contents("unix://{$this->socketPath}", false, $context, 0, null);
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => "http://localhost/{$this->apiVersion}/containers/{$containerId}/logs?" . $query,
+            CURLOPT_UNIX_SOCKET_PATH => $this->socketPath,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HEADER => false
+        ]);
 
-        if ($logs === false) {
-            throw new Exception("Failed to get container logs");
+        $response = curl_exec($curl);
+        $error = curl_error($curl);
+        curl_close($curl);
+
+        if ($error) {
+            throw new Exception("Failed to get container logs: " . $error);
         }
 
-        $cleanedLogs = '';
-        $rawLogs = str_split($logs, 8);
-        foreach ($rawLogs as $line) {
-            if (strlen($line) > 8) {
-                $cleanedLogs .= substr($line, 8);
-            }
+        return $this->parseLogOutput($response);
+    }
+
+    private function parseLogOutput($output)
+    {
+        $logs = '';
+        $length = strlen($output);
+        $pos = 0;
+
+        while ($pos < $length) {
+            // Docker log format: [8]byte{STREAM_TYPE, 0, 0, 0, SIZE1, SIZE2, SIZE3, SIZE4}
+            if ($length - $pos < 8)
+                break;
+
+            $header = unpack('C1type/C3null/N1size', substr($output, $pos, 8));
+            if (!$header)
+                break;
+
+            $pos += 8;
+            $size = $header['size'];
+
+            if ($length - $pos < $size)
+                break;
+
+            $logs .= substr($output, $pos, $size);
+            $pos += $size;
         }
 
-        return $cleanedLogs;
+        return $logs;
     }
 
     /**
@@ -347,6 +363,30 @@ class DockerManager
     }
 
     /**
+     * Remove a network
+     * 
+     * @param string $networkId Network ID or name
+     * @return bool Success status
+     */
+    public function removeNetwork($networkId)
+    {
+        $this->request('DELETE', "/networks/{$networkId}");
+        return true;
+    }
+
+    /**
+     * Get detailed information about a network
+     * 
+     * @param string $networkId Network ID or name
+     * @return array Network details
+     */
+    public function inspectNetwork($networkId)
+    {
+        return $this->request('GET', "/networks/{$networkId}");
+    }
+
+
+    /**
      * Get system information
      * 
      * @return array System information
@@ -412,7 +452,7 @@ class ProjectData
     function __construct($name)
     {
         $this->name = $name;
-        if(!file_exists($_SERVER["DOCUMENT_ROOT"] . '/projects.json')) {
+        if (!file_exists($_SERVER["DOCUMENT_ROOT"] . '/projects.json')) {
             file_put_contents($_SERVER["DOCUMENT_ROOT"] . '/projects.json', "{}");
         }
     }

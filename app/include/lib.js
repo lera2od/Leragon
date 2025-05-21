@@ -13,13 +13,14 @@ class Modal {
         }
     }
 
-    show({ icon, title, id, content, buttons }) {
+    show({icon, title, id, content, buttons, size, onShow}) {
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.id = id || 'modal-' + Date.now();
 
         const modalContent = document.createElement('div');
         modalContent.className = 'modal-content';
+        modalContent.classList.add(size || 'modal-md');
 
         const headerDiv = document.createElement('div');
         headerDiv.className = 'modal-header';
@@ -65,7 +66,12 @@ class Modal {
         modal.appendChild(modalContent);
 
         this.modalContainer.appendChild(modal);
-        setTimeout(() => modal.classList.add('show'), 10);
+        setTimeout(() => {
+            modal.classList.add('show');
+            if (typeof onShow === 'function') {
+                onShow(modal, { icon, title, id, content, buttons });
+            }
+        }, 10);
 
         return new Promise((resolve) => {
             modal.addEventListener('modal-close', () => {

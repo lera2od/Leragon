@@ -66,6 +66,66 @@ try {
 
             $result = true;
             break;
+
+        case 'NetworkRemove':
+            checkInput('networkId');
+            
+            $result = $Docker->removeNetwork($input['networkId']);
+            break;
+
+        case 'NetworkInspect':
+            checkInput('networkId');
+            
+            $details = $Docker->inspectNetwork($input['networkId']);
+            echo json_encode([
+                'success' => true,
+                'details' => $details
+            ]);
+            exit;
+        
+                case 'VolumeRemove':
+            checkInput('volumeName');
+            checkInput('force');
+            
+            $result = $Docker->removeVolume($input['volumeName'], $input['force']);
+            break;
+
+        case 'VolumeInspect':
+            checkInput('volumeName');
+            
+            $details = $Docker->inspectVolume($input['volumeName']);
+            echo json_encode([
+                'success' => true,
+                'details' => $details
+            ]);
+            exit;
+        
+        case 'ContainerLogs':
+            checkInput('containerId');
+            checkInput('tail');
+            checkInput('timestamps');
+            
+            try {
+                $logs = $Docker->getContainerLogs(
+                    $input['containerId'],
+                    true,
+                    true,
+                    $input['tail'] === 'all' ? 0 : (int)$input['tail'],
+                    $input['timestamps']
+                );
+                
+                echo json_encode([
+                    'success' => true,
+                    'logs' => $logs
+                ]);
+            } catch (Exception $e) {
+                echo json_encode([
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ]);
+            }
+            exit;
+            
         default:
             throw new Exception('Invalid action');
     }
