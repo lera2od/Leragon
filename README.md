@@ -24,10 +24,10 @@ This project is far from finished or even usable. I will do a little todo list b
 |---|------|
 | ✓ | global -> projects |
 | ✓ | projects -> containers |
-| ☐ | projects -> images |
-| ☐ | projects -> networks |
-| ☐ | projects -> volumes |
-| ☐ | projects -> logs |
+| ✓ | projects -> images |
+| ✓ | projects -> networks |
+| ✓ | projects -> volumes |
+| ✓ | projects -> logs |
 | ☐ | projects -> settings |
 | ☐ | images |
 | ☐ | networks |
