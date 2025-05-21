@@ -164,7 +164,7 @@
             const apiAction = actionMap[action] || action;
 
             if (containerId === 'all') {
-                if (!confirm('Are you sure you want to perform this action on all containers?')) {
+                if (!await confirmModal('Are you sure you want to perform this action on all containers?')) {
                     return;
                 }
 
@@ -194,7 +194,7 @@
                 toast.show('All containers ' + action + 'ed successfully!', 'success');
                 setTimeout(() => window.location.reload(), 1000);
             } else {
-                if (!confirm('Are you sure you want to perform this action on this container?')) {
+                if (!await confirmModal('Are you sure you want to perform this action on this container?')) {
                     return;
                 }
 
@@ -237,6 +237,10 @@
                 <i class="fas fa-play"></i>
                 <span>Start</span>
             </button>
+            <button class="btn btn-danger" title="Remove container" onclick="removeContainer('${container.dataset.id}')">
+                <i class="fas fa-trash"></i>
+                <span>Remove</span>
+            </button>
         `;
             } else if (action === 'start' || action === 'containerStart') {
                 statusIndicator.className = 'container-status-indicator running';
@@ -269,8 +273,9 @@
             document.body.appendChild(overlay);
         }
 
-        function setProjectDescription() {
-            const description = prompt('Enter new project description:');
+        async function setProjectDescription() {
+            const currentDescription = '<?php echo htmlspecialchars($ProjectData->get("description") ?? 'No description available'); ?>';
+            const description = await promptModal('Set New Project Description', currentDescription, 'Description');
             if (description) {
                 fetch('api.php', {
                     method: 'POST',
@@ -300,25 +305,29 @@
                 title: 'Remove Container',
                 content: `
             <p>How would you like to remove this container?</p>
-            <div style="margin-top: 16px;">
-                <label>
+            <div class="checkbox-group">
+                <div class="checkbox-wrapper">
                     <input type="checkbox" id="force-remove">
-                    Force remove (Kill container if running)
-                </label>
-            </div>
-            <div style="margin-top: 8px;">
-                <label>
+                    <label for="force-remove">
+                        Force remove (Kill container if running)
+                    </label>
+                </div>
+                <div class="checkbox-wrapper">
                     <input type="checkbox" id="remove-volumes">
-                    Remove associated volumes
-                </label>
+                    <label for="remove-volumes">
+                        Remove associated volumes
+                    </label>
+                </div>
             </div>
         `,
                 buttons: [
                     {
+                        icon: 'times',
                         text: 'Cancel',
                         class: 'btn-secondary'
                     },
                     {
+                        icon: 'trash',
                         text: 'Remove',
                         class: 'btn-danger',
                         handler: () => {

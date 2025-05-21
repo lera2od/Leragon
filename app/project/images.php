@@ -122,7 +122,7 @@
     </div>
     <script>
         async function removeImage(imageId) {
-            if (!confirm('Are you sure you want to remove this image?')) return;
+            if (!await confirmModal('Are you sure you want to remove this image?')) return;
 
             try {
                 const response = await fetch('/project/api.php', {

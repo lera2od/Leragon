@@ -12,7 +12,7 @@ class Modal {
         }
     }
 
-    show({icon, title, id, content, buttons }) {
+    show({ icon, title, id, content, buttons }) {
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.id = id || 'modal-' + Date.now();
@@ -22,7 +22,7 @@ class Modal {
 
         const headerDiv = document.createElement('div');
         headerDiv.className = 'modal-header';
-        
+
         const titleEl = document.createElement('h3');
         titleEl.textContent = title;
 
@@ -50,7 +50,7 @@ class Modal {
         buttons.forEach(btn => {
             const button = document.createElement('button');
             button.className = `btn ${btn.class || 'btn-secondary'}`;
-            button.textContent = btn.text;
+            button.innerHTML = `<i class="fa fa-${btn.icon}"></i> ${btn.text}`;
             button.onclick = () => {
                 if (btn.handler) btn.handler();
                 this.close(modal);
@@ -83,3 +83,58 @@ class Modal {
 }
 
 const modal = new Modal();
+
+function confirmModal(text) {
+    return new Promise((resolve) => {
+        modal.show({
+            title: 'Confirm',
+            icon: 'question-circle',
+            content: "<p>" + text + "</p>",
+            buttons: [
+                {
+                    icon: 'times',
+                    text: 'Cancel',
+                    class: 'btn-secondary',
+                    handler: () => resolve(false)
+                },
+                {
+                    icon: 'check',
+                    text: 'OK',
+                    class: 'btn-primary',
+                    handler: () => resolve(true)
+                }
+            ]
+        });
+    });
+}
+
+function promptModal(text, defaultValue = '', innerText = text) {
+    return new Promise((resolve) => {
+        const inputId = 'prompt-input-' + Date.now();
+        modal.show({
+            title: text || 'Input',
+            icon: 'edit',
+            content: `<div class="input">
+                <input type="text" id="${inputId}" value="${defaultValue}" placeholder=" " />
+                <label for="${inputId}">${innerText}</label>
+            </div>`,
+            buttons: [
+                {
+                    icon: 'times',
+                    text: 'Cancel',
+                    class: 'btn-secondary',
+                    handler: () => resolve(null)
+                },
+                {
+                    icon: 'check',
+                    text: 'OK',
+                    class: 'btn-primary',
+                    handler: () => {
+                        const input = document.getElementById(inputId);
+                        resolve(input.value);
+                    }
+                }
+            ]
+        });
+    });
+}
