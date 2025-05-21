@@ -412,6 +412,10 @@ class ProjectData
     function __construct($name)
     {
         $this->name = $name;
+        if(!file_exists($_SERVER["DOCUMENT_ROOT"] . '/projects.json')) {
+            $projectsJson = [];
+            file_put_contents($_SERVER["DOCUMENT_ROOT"] . '/projects.json', json_encode($projectsJson));
+        }
     }
 
     function get($name)

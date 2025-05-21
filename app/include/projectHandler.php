@@ -6,7 +6,7 @@ if ($projectName === null) {
     exit;
 }
 
-require "../docker.php";
+require "../include/docker.php";
 
 $Docker = new DockerManager();
 $containers = $Docker->listContainers(true);
@@ -59,6 +59,7 @@ foreach ($project['containers'] as $container) {
         }, $container['Ports'])),
         'status' => ($container['State'] === 'running') ? 'running' : 'stopped',
         'uptime' => $container['Status'],
+        'image' => $container['Image'],
     ];  
 }
 
