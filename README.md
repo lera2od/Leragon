@@ -28,6 +28,7 @@ This project is far from finished or even usable. I will do a little todo list b
 | ✓ | projects -> networks |
 | ✓ | projects -> volumes |
 | ✓ | projects -> logs |
+| ✓ |  Light-Dark themes |
 | ☐ | projects -> settings |
 | ☐ | images |
 | ☐ | networks |
