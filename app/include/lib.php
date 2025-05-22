@@ -207,15 +207,27 @@ class DockerManager
             CURLOPT_URL => "http://localhost/{$this->apiVersion}/containers/{$containerId}/logs?" . $query,
             CURLOPT_UNIX_SOCKET_PATH => $this->socketPath,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HEADER => false
+            CURLOPT_HEADER => false,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_CONNECTTIMEOUT => 5,
+            CURLOPT_NOSIGNAL => 1
         ]);
 
         $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         $error = curl_error($curl);
         curl_close($curl);
 
         if ($error) {
             throw new Exception("Failed to get container logs: " . $error);
+        }
+
+        if ($httpCode !== 200) {
+            throw new Exception("Failed to get container logs: HTTP code " . $httpCode);
+        }
+
+        if (strlen($response) > 1024 * 1024 * 10) {
+            throw new Exception("Log size too large (>10MB). Please reduce the number of log lines.");
         }
 
         return $this->parseLogOutput($response);
@@ -495,4 +507,23 @@ class Logger
     {
         file_put_contents($this->logFile, "[" . date("Y-m-d H:i:s") . "] [$level] $message\n", FILE_APPEND);
     }
+}
+
+function apiLoginCheck()
+{
+    session_start();
+
+    include $_SERVER["DOCUMENT_ROOT"] . "/include/mysql.php";
+    if (!isset($_SESSION["password"]) || !isset($_SESSION["user"])) {
+        exit(json_encode(["error" => "Not logged in"]));
+    }
+
+    $stmt = $conn->prepare("SELECT * FROM users WHERE username = ? AND password = ?");
+    $stmt->bind_param("ss", $_SESSION["user"], $_SESSION["password"]);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    if ($result->num_rows < 1) {
+        exit(json_encode(["error" => "Invalid session"]));
+    }
+    return true;
 }

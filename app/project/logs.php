@@ -1,4 +1,4 @@
-<?php include "../include/projectHandler.php"; ?>
+<?php include "include/projectHandler.php"; ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,7 +9,7 @@
     <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <?php include "../include/header.php"; ?>
+    <?php include "include/header.php"; ?>
 
     <main class="main-content">
         <?php include "top.php"; ?>
@@ -20,7 +20,7 @@
                         <option value="">Select container</option>
                         <?php foreach ($projectDetails["containers"] as $container): ?>
                             <option value="<?php echo htmlspecialchars($container['id']); ?>">
-                                <?php echo htmlspecialchars($container['name']); ?>
+                                <?php echo prettifyName($container['name']); ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -91,6 +91,10 @@
         async function downloadLogs() {
             if (!currentContainer) {
                 toast.show('Please select a container first', 'error');
+                return;
+            }
+
+            if(!await confirmModal('Are you sure you want to download the logs SINCE THE AUTH UPDATE THIS BRICKS THE APP AND YOU HAVE TO RESTART THE APP?')) {
                 return;
             }
 
@@ -165,10 +169,8 @@
             }
         }
 
-        // Cleanup on page unload
         window.addEventListener('beforeunload', stopLogging);
 
-        // Handle option changes
         followLogsCheckbox.addEventListener('change', (e) => {
             if (currentContainer) {
                 if (e.target.checked) {

@@ -2,13 +2,16 @@ FROM php:8.2-apache
 
 ARG DOCKER_GID
 
-RUN docker-php-ext-install sockets
+RUN docker-php-ext-install sockets mysqli
 
-RUN a2enmod rewrite
+COPY apacherewritepermissions.conf /etc/apache2/conf-available/rewrite-permissions.conf
+
+RUN a2enmod rewrite && \
+    a2enconf rewrite-permissions
 
 RUN if [ -z "${DOCKER_GID}" ]; then \
-        echo "Warning: DOCKER_GID not provided, using default 999. This might not match host GID."; \
-        DOCKER_GID_TO_USE=999; \
+        echo "Error: DOCKER_GID not provided. Aborting." >&2; \
+        exit 1; \
     else \
         DOCKER_GID_TO_USE=${DOCKER_GID}; \
     fi && \
@@ -22,5 +25,7 @@ RUN echo "www-data groups:" && id www-data
 WORKDIR /var/www/html
 
 RUN chown -R www-data:www-data /var/www/html
+
+COPY apacherewritepermissions.conf /etc/apache2/conf-available/rewrite-permissions.conf
 
 EXPOSE 80

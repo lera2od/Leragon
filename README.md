@@ -28,17 +28,26 @@ This project is far from finished or even usable. I will do a little todo list b
 | ✓ | projects -> networks |
 | ✓ | projects -> volumes |
 | ✓ | projects -> logs |
-| ✓ |  Light-Dark themes |
+| ✓ | Light-Dark themes |
+| ✓ | Installation Script |
+| ✓ | Auth (really basic auth) |
 | ☐ | projects -> settings |
 | ☐ | images |
 | ☐ | networks |
 | ☐ | volumes |
 | ☐ | logs |
 | ☐ | settings |
-| ☐ | Auth |
-| ☐ | Installation Script |
+| ☐ | advanced auth |
 
 ## usage
 **AS I SAID DONT USE THIS** 
 
-but if you do you can use docker-compose. Also the dockerfile needs `DOCKER_GID` paramater so it can access `docker.sock` but you can figure that out
+but if you want to
+
+First make yourself a better database username and password and set it in `docker-compose.yaml` and `app/config/mysql.ini`. If you skipped this step and want to go back just delete the database volume.
+
+Second make sure you have Docker and Docker-compose installed.
+
+Third run `sudo ./setup.sh`
+
+Fourth open `http://localhost:3001` or any port you specified and create the first account

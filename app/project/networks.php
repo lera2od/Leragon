@@ -1,4 +1,4 @@
-<?php include "../include/projectHandler.php"; ?>
+<?php include "include/projectHandler.php"; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,7 +11,7 @@
 </head>
 
 <body>
-    <?php include "../include/header.php"; ?>
+    <?php include "include/header.php"; ?>
 
     <main class="main-content">
         <?php include "top.php"; ?>
@@ -49,7 +49,7 @@
                                     <i class="fas fa-network-wired"></i>
                                 </div>
                                 <div class="container-name-wrapper">
-                                    <div class="container-name"><?php echo htmlspecialchars($networkName); ?></div>
+                                    <div class="container-name"><?php echo prettifyName($networkName); ?></div>
                                     <div class="container-badge info">
                                         <?php echo htmlspecialchars($driver); ?>
                                     </div>
@@ -168,38 +168,6 @@
                         `,
                         size: "modal-lg",
                         onShow: () => {
-                            function renderTree(container, obj, path = '') {
-                                for (const key in obj) {
-                                    if (!obj.hasOwnProperty(key)) continue;
-                                    const value = obj[key];
-                                    const nodeId = path + key.replace(/[^a-zA-Z0-9_]/g, '_');
-                                    if (typeof value === 'object' && value !== null) {
-                                        const details = document.createElement('details');
-                                        details.style.marginLeft = '20px';
-                                        details.style.padding = '4px 0';
-                                        const summary = document.createElement('summary');
-                                        summary.style.cursor = 'pointer';
-                                        summary.style.color = 'var(--text-primary)';
-                                        summary.style.fontWeight = 'bold';
-                                        summary.textContent = key;
-                                        details.appendChild(summary);
-                                        renderTree(details, value, nodeId + '_');
-                                        container.appendChild(details);
-                                    } else {
-                                        const div = document.createElement('div');
-                                        div.style.marginLeft = '20px';
-                                        div.style.padding = '4px 0';
-                                        div.style.color = 'var(--text-secondary)';
-                                        const keySpan = document.createElement('span');
-                                        keySpan.style.color = 'var(--text-primary)';
-                                        keySpan.style.fontWeight = 'bold';
-                                        keySpan.textContent = key + ': ';
-                                        div.appendChild(keySpan);
-                                        div.appendChild(document.createTextNode(String(value)));
-                                        container.appendChild(div);
-                                    }
-                                }
-                            }
                             const treeContainer = document.getElementById('network-json-tree');
                             if (treeContainer) {
                                 treeContainer.innerHTML = '';

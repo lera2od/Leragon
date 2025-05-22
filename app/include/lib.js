@@ -13,7 +13,7 @@ class Modal {
         }
     }
 
-    show({icon, title, id, content, buttons, size, onShow}) {
+    show({ icon, title, id, content, buttons, size, onShow }) {
         const modal = document.createElement('div');
         modal.className = 'modal';
         modal.id = id || 'modal-' + Date.now();
@@ -223,6 +223,69 @@ class Toast {
 
             startTimer();
         });
+    }
+}
+
+function renderTree(container, obj, path = '') {
+    for (const key in obj) {
+        if (!obj.hasOwnProperty(key)) continue;
+        const value = obj[key];
+        const nodeId = path + key.replace(/[^a-zA-Z0-9_]/g, '_');
+        if (typeof value === 'object' && value !== null) {
+            const details = document.createElement('details');
+            details.style.marginLeft = '20px';
+            details.style.padding = '4px 0';
+            const summary = document.createElement('summary');
+            summary.style.cursor = 'pointer';
+            summary.style.color = 'var(--text-primary)';
+            summary.style.fontWeight = 'bold';
+            summary.textContent = key;
+            details.appendChild(summary);
+            renderTree(details, value, nodeId + '_');
+            container.appendChild(details);
+        } else {
+            const div = document.createElement('div');
+            div.style.marginLeft = '20px';
+            div.style.padding = '4px 0';
+            div.style.color = 'var(--text-secondary)';
+            const keySpan = document.createElement('span');
+            keySpan.style.color = 'var(--text-primary)';
+            keySpan.style.fontWeight = 'bold';
+            keySpan.textContent = key + ': ';
+            div.appendChild(keySpan);
+
+            let displayValue = String(value);
+            let isTruncated = false;
+            if (displayValue.length > 80) {
+                displayValue = displayValue.slice(0, 80) + '...';
+                isTruncated = true;
+            }
+            const valueSpan = document.createElement('span');
+            valueSpan.textContent = displayValue;
+            valueSpan.style.cursor = 'pointer';
+            valueSpan.title = isTruncated ? 'Click to copy full value' : 'Click to copy';
+            valueSpan.onclick = function () {
+                navigator.clipboard.writeText(String(value));
+                toast.show('Copied to clipboard!', 'success');
+            };
+            div.appendChild(valueSpan);
+
+            if (isTruncated) {
+                const copyIcon = document.createElement('i');
+                copyIcon.className = 'fas fa-copy';
+                copyIcon.style.marginLeft = '6px';
+                copyIcon.style.cursor = 'pointer';
+                copyIcon.title = 'Copy full value';
+                copyIcon.onclick = function (e) {
+                    e.stopPropagation();
+                    navigator.clipboard.writeText(String(value));
+                    toast.show('Copied to clipboard!', 'success');
+                };
+                div.appendChild(copyIcon);
+            }
+
+            container.appendChild(div);
+        }
     }
 }
 

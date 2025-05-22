@@ -7,14 +7,14 @@ services:
       - db_data:/var/lib/mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: leragon
       MYSQL_USER: leragon
       MYSQL_PASSWORD: leragon
-      MYSQL_DATABASE: leragon
     networks: 
       - app-network
 
   web:
-    build: .
+    image: leragon
     restart: always
     environment:
       APACHE_DOCUMENT_ROOT: /var/www/html/ 
@@ -24,12 +24,15 @@ services:
     volumes:
       - ./app:/var/www/html/
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./apacherewritepermissions.conf:/etc/apache2/conf-available/rewrite-permissions.conf
     depends_on:
       - db
     user: "www-data" 
     networks:
       - app-network
-
+    command: >
+      bash -c "a2enconf rewrite-permissions &&
+               apache2-foreground"
 volumes:
   db_data:
 

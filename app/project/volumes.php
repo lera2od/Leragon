@@ -1,4 +1,4 @@
-<?php include "../include/projectHandler.php"; ?>
+<?php include "include/projectHandler.php"; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,7 +11,7 @@
 </head>
 
 <body>
-    <?php include "../include/header.php"; ?>
+    <?php include "include/header.php"; ?>
 
     <main class="main-content">
         <?php include "top.php"; ?>

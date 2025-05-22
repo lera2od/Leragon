@@ -1,4 +1,4 @@
-<?php include "../include/projectHandler.php"; ?>
+<?php include "include/projectHandler.php"; ?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -11,7 +11,7 @@
 </head>
 
 <body>
-    <?php include "../include/header.php"; ?>
+    <?php include "include/header.php"; ?>
 
     <main class="main-content">
         <?php include "top.php"; ?>
@@ -100,6 +100,11 @@
                                     <i class="fas fa-stop"></i>
                                     <span>Stop</span>
                                 </button>
+                                <button class="btn btn-primary" title="Inspect container"
+                                    onclick="inspectContainer('<?php echo htmlspecialchars($container['id']); ?>')">
+                                    <i class="fas fa-eye"></i>
+                                    <span>Inspect</span>
+                                </button>
                             <?php else: ?>
                                 <button class="btn btn-primary" title="Start container"
                                     onclick="apiCall('<?php echo htmlspecialchars($container['id']); ?>', 'start')">
@@ -110,6 +115,11 @@
                                     onclick="removeContainer('<?php echo htmlspecialchars($container['id']); ?>')">
                                     <i class="fas fa-trash"></i>
                                     <span>Remove</span>
+                                </button>
+                                <button class="btn btn-secondary" title="Inspect container"
+                                    onclick="inspectContainer('<?php echo htmlspecialchars($container['id']); ?>')">
+                                    <i class="fas fa-eye"></i>
+                                    <span>Inspect</span>
                                 </button>
                             <?php endif; ?>
                         </div>
@@ -122,9 +132,9 @@
     <script>
         async function apiCall(containerId, action) {
             const actionMap = {
-                'start': 'containerStart',
-                'stop': 'containerStop',
-                'restart': 'containerRestart'
+                'start': 'ContainerStart',
+                'stop': 'ContainerStop',
+                'restart': 'ContainerRestart'
             };
             const apiAction = actionMap[action] || action;
 
@@ -193,12 +203,12 @@
             const statusBadge = container.querySelector('.container-badge');
             const actionsDiv = container.querySelector('.container-actions');
 
-            if (action === 'stop' || action === 'containerStop') {
+            if (action === 'stop' || action === 'ContainerStop') {
                 statusIndicator.className = 'container-status-indicator stopped';
                 statusBadge.className = 'container-badge stopped';
                 statusBadge.textContent = 'stopped';
                 actionsDiv.innerHTML = `
-            <button class="btn btn-primary" title="Start container" onclick="apiCall('${container.dataset.id}', 'containerStart')">
+            <button class="btn btn-primary" title="Start container" onclick="apiCall('${container.dataset.id}', 'ContainerStart')">
                 <i class="fas fa-play"></i>
                 <span>Start</span>
             </button>
@@ -206,19 +216,27 @@
                 <i class="fas fa-trash"></i>
                 <span>Remove</span>
             </button>
+            <button class="btn btn-secondary" title="Inspect container" onclick="inspectContainer('${container.dataset.id}')">
+                <i class="fas fa-eye"></i>
+                <span>Inspect</span>
+            </button>
         `;
-            } else if (action === 'start' || action === 'containerStart') {
+            } else if (action === 'start' || action === 'ContainerStart') {
                 statusIndicator.className = 'container-status-indicator running';
                 statusBadge.className = 'container-badge running';
                 statusBadge.textContent = 'running';
                 actionsDiv.innerHTML = `
-            <button class="btn btn-secondary" title="Restart container" onclick="apiCall('${container.dataset.id}', 'containerRestart')">
+            <button class="btn btn-secondary" title="Restart container" onclick="apiCall('${container.dataset.id}', 'ContainerRestart')">
                 <i class="fas fa-sync-alt"></i>
                 <span>Restart</span>
             </button>
-            <button class="btn btn-danger" title="Stop container" onclick="apiCall('${container.dataset.id}', 'containerStop')">
+            <button class="btn btn-danger" title="Stop container" onclick="apiCall('${container.dataset.id}', 'ContainerStop')">
                 <i class="fas fa-stop"></i>
                 <span>Stop</span>
+            </button>
+            <button class="btn btn-secondary" title="Inspect container" onclick="inspectContainer('${container.dataset.id}')">
+                <i class="fas fa-eye"></i>
+                <span>Inspect</span>
             </button>
         `;
             }
@@ -279,7 +297,7 @@
                                     'Content-Type': 'application/json'
                                 },
                                 body: JSON.stringify({
-                                    action: 'containerRemove',
+                                    action: 'ContainerRemove',
                                     containerId: containerId,
                                     force: force,
                                     volumes: volumes
@@ -302,6 +320,71 @@
                     }
                 ]
             });
+        }
+
+        let rawJson = null;
+
+        async function inspectContainer(containerId) {
+            try {
+                const response = await fetch('/project/api.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'ContainerInspect',
+                        containerId: containerId
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    modal.show({
+                        icon: 'info-circle',
+                        title: 'Inspect Container',
+                        content: `
+                            <div style="margin-bottom: 10px;">
+                                <button class="btn btn-sm btn-secondary" onclick="copyRawJson()">
+                                    <i class="fas fa-copy"></i> Copy Raw JSON
+                                </button>
+                            </div>
+                            <div id="network-json-tree" style="max-height: 400px; overflow-y: auto; font-family: monospace; font-size: 14px;"></div>
+                        `,
+                        size: "modal-lg",
+                        onShow: () => {
+                            const treeContainer = document.getElementById('network-json-tree');
+                            if (treeContainer) {
+                                treeContainer.innerHTML = '';
+                                renderTree(treeContainer, data.details);
+                            }
+                        },
+                        buttons: [{
+                            icon: 'times',
+                            text: 'Close',
+                            class: 'btn-secondary'
+                        }]
+                    });
+                    rawJson = JSON.stringify(data.details, null, 2);
+                } else {
+                    toast.show('Failed to inspect container: ' + data.error, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                toast.show('Error inspecting container', 'error');
+            }
+        }
+
+        function copyRawJson() {
+            if (rawJson) {
+                navigator.clipboard.writeText(rawJson).then(() => {
+                    toast.show('Raw JSON copied to clipboard!', 'success');
+                }).catch(err => {
+                    console.error('Error copying text: ', err);
+                    toast.show('Failed to copy raw JSON', 'error');
+                });
+            } else {
+                toast.show('No raw JSON available', 'error');
+            }
         }
     </script>
 </body>

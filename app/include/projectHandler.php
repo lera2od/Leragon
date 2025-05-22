@@ -6,7 +6,7 @@ if ($projectName === null) {
     exit;
 }
 
-require "../include/lib.php";
+require "include/lib.php";
 
 $Docker = new DockerManager();
 $containers = $Docker->listContainers(true);

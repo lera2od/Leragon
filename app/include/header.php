@@ -73,13 +73,44 @@
 </script>
 
 <div class="container">
+    <?php
+    $sidebarMenu = [
+        ['label' => 'Projects', 'url' => '/'],
+        ['label' => 'Images', 'url' => null],
+        ['label' => 'Networks', 'url' => null],
+        ['label' => 'Volumes', 'url' => null],
+        ['label' => 'Logs', 'url' => null],
+        ['label' => 'Settings', 'url' => '/settings'],
+    ];
+
+    $currentUrl = $_SERVER['REQUEST_URI'];
+    $activeFound = false;
+    ?>
     <aside class="sidebar">
         <ul class="sidebar-menu">
-            <li class="sidebar-menu-item active">Projects</li>
-            <li class="sidebar-menu-item">Images</li>
-            <li class="sidebar-menu-item">Networks</li>
-            <li class="sidebar-menu-item">Volumes</li>
-            <li class="sidebar-menu-item">Logs</li>
-            <li class="sidebar-menu-item">Settings</li>
+            <?php foreach ($sidebarMenu as $item): ?>
+                <?php
+                    $isActive = false;
+                    if (!$activeFound && $item['url']) {
+                        if ($item['url'] === '/') {
+                            $isActive = $currentUrl === '/';
+                        } else {
+                            $isActive = strpos($currentUrl, $item['url']) === 0;
+                        }
+                        if ($isActive) {
+                            $activeFound = true;
+                        }
+                    }
+                ?>
+                <?php if ($item['url']): ?>
+                    <a href="<?= htmlspecialchars($item['url']) ?>">
+                <?php endif; ?>
+                <li class="sidebar-menu-item<?= $isActive ? ' active' : '' ?>">
+                    <?= htmlspecialchars($item['label']) ?>
+                </li>
+                <?php if ($item['url']): ?>
+                    </a>
+                <?php endif; ?>
+            <?php endforeach; ?>
         </ul>
     </aside>

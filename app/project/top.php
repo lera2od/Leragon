@@ -21,6 +21,15 @@
             </p><button class="btn btn-secondary" onclick="setProjectDescription()"><i class="fas fa-edit"></i>
                 <span>Edit Description</span></button>
         </div>
+
+        <?php if ($projectName == "leragon" && !isset($_COOKIE['dissmissLeragonWarning'])) { ?>
+            <div class="alert alert-danger" style="margin-top: 10px;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p><strong>Warning:</strong> This is the Leragon project. The manager you are using right now.</p>
+                <button class="btn btn-secondary" onclick="dissmissLeragonWarning()"><i class="fas fa-times"></i>
+                    <span>Dismiss</span></button>
+            </div>
+        <?php } ?>
     </div>
 
     <div class="tabs">
@@ -50,7 +59,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ description: description, action: 'containerSetDescription', projectName: '<?php echo htmlspecialchars($projectName); ?>' })
+                body: JSON.stringify({ description: description, action: 'ContainerSetDescription', projectName: '<?php echo htmlspecialchars($projectName); ?>' })
             })
                 .then(response => response.json())
                 .then(data => {
@@ -66,5 +75,10 @@
                     toast.show('Error updating project description.', 'error');
                 });
         }
+    }
+
+    function dissmissLeragonWarning() {
+        document.querySelector('.alert').style.display = 'none';
+        document.cookie = "dissmissLeragonWarning=true; max-age=31536000; path=/";
     }
 </script>
