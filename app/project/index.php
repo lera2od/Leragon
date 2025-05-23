@@ -242,20 +242,6 @@
             }
         }
 
-        function lockUser() {
-            document.body.style.pointerEvents = 'none';
-
-            const overlay = document.createElement('div');
-            overlay.style.position = 'fixed';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.width = '100%';
-            overlay.style.height = '100%';
-            overlay.style.background = 'radial-gradient(circle at bottom right, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.7) 70%)';
-            overlay.style.zIndex = '100';
-            document.body.appendChild(overlay);
-        }
-        
         async function removeContainer(containerId) {
             const result = await modal.show({
                 icon: 'trash',

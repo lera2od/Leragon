@@ -191,6 +191,7 @@ class DockerManager
      * @param bool $stdout Include stdout logs
      * @param bool $stderr Include stderr logs
      * @param int $tail Number of lines to return from the end of the logs
+     * @param bool $timestamps Include timestamps
      * @return string Container logs
      */
     public function getContainerLogs($containerId, $stdout = true, $stderr = true, $tail = 100, $timestamps = false)
@@ -208,51 +209,85 @@ class DockerManager
             CURLOPT_UNIX_SOCKET_PATH => $this->socketPath,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => false,
-            CURLOPT_TIMEOUT => 30,
+            CURLOPT_TIMEOUT => 20, // Reduced timeout
             CURLOPT_CONNECTTIMEOUT => 5,
-            CURLOPT_NOSIGNAL => 1
+            CURLOPT_NOSIGNAL => 1,
+            CURLOPT_FOLLOWLOCATION => false,
+            CURLOPT_MAXREDIRS => 0,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false
         ]);
 
         $response = curl_exec($curl);
         $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
         $error = curl_error($curl);
+        $errno = curl_errno($curl);
         curl_close($curl);
 
-        if ($error) {
-            throw new Exception("Failed to get container logs: " . $error);
+        if ($errno !== 0) {
+            throw new Exception("cURL error ({$errno}): {$error}");
         }
 
         if ($httpCode !== 200) {
-            throw new Exception("Failed to get container logs: HTTP code " . $httpCode);
+            throw new Exception("HTTP error: {$httpCode}");
         }
 
-        if (strlen($response) > 1024 * 1024 * 10) {
-            throw new Exception("Log size too large (>10MB). Please reduce the number of log lines.");
+        if ($response === false) {
+            throw new Exception("Failed to get container logs");
+        }
+
+        // Check response size before processing
+        $responseSize = strlen($response);
+        if ($responseSize > 5 * 1024 * 1024) { // 5MB limit
+            throw new Exception("Log response too large ({$responseSize} bytes). Please reduce the number of log lines.");
         }
 
         return $this->parseLogOutput($response);
     }
 
+    /**
+     * Parse Docker log output format
+     */
     private function parseLogOutput($output)
     {
+        if (empty($output)) {
+            return '';
+        }
+
         $logs = '';
         $length = strlen($output);
         $pos = 0;
+        $maxIterations = 10000; // Prevent infinite loops
+        $iterations = 0;
 
-        while ($pos < $length) {
-            // Docker log format: [8]byte{STREAM_TYPE, 0, 0, 0, SIZE1, SIZE2, SIZE3, SIZE4}
-            if ($length - $pos < 8)
+        while ($pos < $length && $iterations < $maxIterations) {
+            $iterations++;
+
+            // Need at least 8 bytes for header
+            if ($length - $pos < 8) {
+                // If remaining data is less than header size, treat as raw text
+                $logs .= substr($output, $pos);
                 break;
+            }
 
+            // Try to parse Docker log header
             $header = unpack('C1type/C3null/N1size', substr($output, $pos, 8));
-            if (!$header)
+
+            if (!$header || $header['size'] < 0 || $header['size'] > 1024 * 1024) {
+                // Invalid header, treat remaining as raw text
+                $logs .= substr($output, $pos);
                 break;
+            }
 
             $pos += 8;
             $size = $header['size'];
 
-            if ($length - $pos < $size)
+            // Check if we have enough data for the payload
+            if ($length - $pos < $size) {
+                // Not enough data, treat remaining as raw text
+                $logs .= substr($output, $pos - 8);
                 break;
+            }
 
             $logs .= substr($output, $pos, $size);
             $pos += $size;
@@ -513,7 +548,10 @@ function apiLoginCheck()
 {
     session_start();
 
-    include $_SERVER["DOCUMENT_ROOT"] . "/include/mysql.php";
+    global $conn;
+    if (!isset($conn)) {
+        require_once $_SERVER["DOCUMENT_ROOT"] . "/include/mysql.php";
+    }
     if (!isset($_SESSION["password"]) || !isset($_SESSION["user"])) {
         exit(json_encode(["error" => "Not logged in"]));
     }
@@ -526,4 +564,52 @@ function apiLoginCheck()
         exit(json_encode(["error" => "Invalid session"]));
     }
     return true;
+}
+
+function apiKeyValidate($apiKey, $dontExit = false)
+{
+    global $conn;
+    if (!isset($conn)) {
+        require_once $_SERVER["DOCUMENT_ROOT"] . "/include/mysql.php";
+    }
+    if (!$apiKey) {
+        if ($dontExit) {
+            return false;
+        }
+        exit(json_encode(["error" => "API Key is not provided"]));
+    }
+
+    $stmt = $conn->prepare("SELECT * FROM api_keys WHERE key_value = ? AND active = 1");
+    $stmt->bind_param("s", $apiKey);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
+    if ($result->num_rows < 1) {
+        if ($dontExit) {
+            return false;
+        }
+        exit(json_encode(["error" => "Invalid API Key"]));
+    }
+
+    $apiKeyData = $result->fetch_assoc();
+
+    $stmt = $conn->prepare("UPDATE api_keys SET last_used = NOW() WHERE id = ?");
+    $stmt->bind_param("i", $apiKeyData['id']);
+    $stmt->execute();
+    
+    if ($dontExit) {
+        return true;
+    }
+}
+
+function gradientFromText($text)
+{
+    $hash = md5($text);
+    $r1 = hexdec(substr($hash, 0, 2));
+    $g1 = hexdec(substr($hash, 2, 2));
+    $b1 = hexdec(substr($hash, 4, 2));
+    $r2 = hexdec(substr($hash, 6, 2));
+    $g2 = hexdec(substr($hash, 8, 2));
+    $b2 = hexdec(substr($hash, 10, 2));
+    return "linear-gradient(135deg, rgb($r1, $g1, $b1), rgb($r2, $g2, $b2))";
 }

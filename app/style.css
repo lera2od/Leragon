@@ -627,8 +627,19 @@ a {
 }
 
 .container-icon {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--pure-white);
+    text-shadow: 0 0 5px var(--text-shadow-color);
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.container-icon i {
+    font-size: 24px;
 }
 
 .btn-sm {
@@ -697,7 +708,8 @@ a {
     min-width: 300px;
     max-width: 400px;
     animation: slideIn 0.3s ease-out forwards;
-    cursor: pointer;}
+    cursor: pointer;
+}
 
 .toast.removing {
     animation: slideOut 0.3s ease-in forwards;
@@ -759,21 +771,6 @@ a {
 .image-card {
     position: relative;
     transition: all 0.2s ease;
-}
-
-.image-card .container-icon {
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    color: var(--pure-white);
-    text-shadow: 0 0 5px var(--text-shadow-color);
-}
-
-.image-card .container-icon i {
-    font-size: 24px;
 }
 
 .image-card:hover {
@@ -1126,21 +1123,6 @@ a {
     transition: all 0.2s ease;
 }
 
-.network-card .container-icon {
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    color: var(--pure-white);
-    text-shadow: 0 0 5px var(--text-shadow-color);
-}
-
-.network-card .container-icon i {
-    font-size: 24px;
-}
-
 .network-card .container-badge {
     background-color: var(--bg-light);
     color: var(--text-secondary);
@@ -1225,21 +1207,6 @@ a {
 .volume-card {
     position: relative;
     transition: all 0.2s ease;
-}
-
-.volume-card .container-icon {
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 8px;
-    color: var(--pure-white);
-    text-shadow: 0 0 5px var(--text-shadow-color);
-}
-
-.volume-card .container-icon i {
-    font-size: 24px;
 }
 
 .volume-card .volume-mountpoint {
@@ -1436,7 +1403,7 @@ a {
     .github-promo .project-overview {
         max-width: 100%;
     }
-    
+
     .github-promo .project-title {
         font-size: 16px;
     }

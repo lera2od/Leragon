@@ -76,16 +76,5 @@ function prettifyName($name)
     return $name;
 }
 
-function gradientFromText($text)
-{
-    $hash = md5($text);
-    $r1 = hexdec(substr($hash, 0, 2));
-    $g1 = hexdec(substr($hash, 2, 2));
-    $b1 = hexdec(substr($hash, 4, 2));
-    $r2 = hexdec(substr($hash, 6, 2));
-    $g2 = hexdec(substr($hash, 8, 2));
-    $b2 = hexdec(substr($hash, 10, 2));
-    return "linear-gradient(135deg, rgb($r1, $g1, $b1), rgb($r2, $g2, $b2))";
-}
 
 $ProjectData = new ProjectData($projectName);

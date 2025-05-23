@@ -34,7 +34,7 @@
 
     <div class="tabs">
         <a class="tab <?= basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : '' ?>"
-            href="/project/?name=<?= htmlspecialchars($projectName) ?>">Containers</a>
+            href="/project/index.php?name=<?= htmlspecialchars($projectName) ?>">Containers</a>
         <a class="tab <?= basename($_SERVER['PHP_SELF']) == 'images.php' ? 'active' : '' ?>"
             href="/project/images.php?name=<?= htmlspecialchars($projectName) ?>">Images</a>
         <a class="tab <?= basename($_SERVER['PHP_SELF']) == 'networks.php' ? 'active' : '' ?>"

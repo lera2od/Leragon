@@ -1,7 +1,10 @@
 RewriteEngine On
 RewriteBase /
 
-RewriteCond %{REQUEST_URI} ^/project/(stream|api)\.php$ [NC]
+RewriteCond %{REQUEST_URI} ^/project/(stream|api|apilogs)\.php$ [NC]
+RewriteRule ^ - [L]
+
+RewriteCond %{REQUEST_URI} ^/database\.php$ [NC]
 RewriteRule ^ - [L]
 
 RewriteRule ^(.*)$ gateway.php [L,QSA]

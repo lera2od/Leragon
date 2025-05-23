@@ -20,6 +20,8 @@
     <div class="tabs">
         <a class="tab <?= basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : '' ?>"
             href="/settings/settings.php">Settings</a>
+        <a class="tab <?= basename($_SERVER['PHP_SELF']) == 'apikeys.php' ? 'active' : '' ?>"
+            href="/settings/apikeys.php">API Keys</a>
         <a class="tab <?= basename($_SERVER['PHP_SELF']) == 'github.php' ? 'active' : '' ?>"
             href="/settings/github.php">Github</a>
     </div>

@@ -1,6 +1,7 @@
 <?php include "include/projectHandler.php"; ?>
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -8,6 +9,7 @@
     <title>Leragon - <?= htmlspecialchars(ucfirst($projectName)); ?> - Logs</title>
     <link rel="stylesheet" href="/style.css">
 </head>
+
 <body>
     <?php include "include/header.php"; ?>
 
@@ -94,15 +96,14 @@
                 return;
             }
 
-            if(!await confirmModal('Are you sure you want to download the logs SINCE THE AUTH UPDATE THIS BRICKS THE APP AND YOU HAVE TO RESTART THE APP?')) {
-                return;
-            }
-
             try {
                 const response = await fetch('/project/api.php', {
                     method: 'POST',
+                    credentials: 'same-origin',
+                    cache: 'no-cache',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'X-API-KEY': '<?php echo htmlspecialchars($user["api_key"]); ?>'
                     },
                     body: JSON.stringify({
                         action: 'ContainerLogs',
@@ -111,6 +112,10 @@
                         timestamps: true
                     })
                 });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
 
                 const data = await response.json();
                 if (data.success) {
@@ -124,7 +129,7 @@
                     window.URL.revokeObjectURL(url);
                     document.body.removeChild(a);
                 } else {
-                    throw new Error(data.error);
+                    throw new Error(data.error || 'Failed to download logs');
                 }
             } catch (error) {
                 console.error('Error downloading logs:', error);
@@ -136,31 +141,63 @@
             stopLogging();
             clearLogs();
 
+            if (!currentContainer) {
+                return;
+            }
+
             try {
-                const evtSource = new EventSource(`/project/stream.php?action=logs&container=${currentContainer}&timestamps=${showTimestampsCheckbox.checked}&tail=${tailLinesSelect.value}`);
+                const url = `/project/stream.php?action=logs&container=${currentContainer}&timestamps=${showTimestampsCheckbox.checked}&tail=${tailLinesSelect.value}&apikey=<?php echo htmlspecialchars($user["api_key"]); ?>`;
+                const evtSource = new EventSource(url);
                 logStream = evtSource;
 
-                evtSource.onmessage = (event) => {
+                evtSource.addEventListener('message', (event) => {
                     const line = document.createElement('div');
                     line.className = 'log-line';
-                    line.textContent = event.data;
+                    line.textContent = event.data.replace(/\\n/g, '\n');
                     logsContent.appendChild(line);
 
                     if (autoScrollCheckbox.checked) {
                         logsContent.scrollTop = logsContent.scrollHeight;
                     }
-                };
+                });
+
+                evtSource.addEventListener('error', (event) => {
+                    console.error('EventSource error:', event);
+                    stopLogging();
+                    toast.show('Log stream connection failed ' + event.data, 'error');
+                });
+
+                evtSource.addEventListener('connected', (event) => {
+                    console.log('Connected to log stream ' + event.data);
+                });
+
+                evtSource.addEventListener('disconnected', (event) => {
+                    console.log('Disconnected from log stream ' + event.data);
+                    stopLogging();
+                });
 
                 evtSource.onerror = (error) => {
                     console.error('EventSource failed:', error);
                     stopLogging();
-                    toast.show('Log stream connection failed', 'error');
+                    toast.show('Log stream connection failed ' + event.data, 'error');
                 };
+
             } catch (error) {
                 console.error('Error starting log stream:', error);
                 toast.show('Failed to start log stream: ' + error.message, 'error');
             }
         }
+
+        function stopLogging() {
+            if (logStream) {
+                logStream.close();
+                logStream = null;
+            }
+        }
+
+        window.addEventListener('beforeunload', stopLogging);
+        window.addEventListener('pagehide', stopLogging);
+
 
         function stopLogging() {
             if (logStream) {
@@ -194,4 +231,5 @@
         });
     </script>
 </body>
+
 </html>

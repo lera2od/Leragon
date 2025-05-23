@@ -32,6 +32,8 @@ if(!isset($_SESSION["password"]) || !isset($_SESSION["user"])) {
     }
 }
 
+$user = null;
+
 if(isset($_SESSION["user"]) && isset($_SESSION["password"])) {
     $stmt = $conn->prepare("SELECT * FROM users WHERE username = ? AND password = ?");
     $stmt->bind_param("ss", $_SESSION["user"], $_SESSION["password"]);

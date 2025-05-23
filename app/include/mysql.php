@@ -18,24 +18,25 @@ $sql = "CREATE TABLE IF NOT EXISTS users (
     username VARCHAR(255) NOT NULL,
     password VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
+    api_key VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 )";
-if ($conn->query($sql) === TRUE) {
-    //echo "Table users created successfully";
-} else {
-    echo "Error creating table: " . $conn->error;
+if ($conn->query($sql) != TRUE) {
+    echo "Error creating table: {$conn->error}";
 }
 
 $sql = "CREATE TABLE IF NOT EXISTS api_keys (
-    id INT(11) AUTO_INCREMENT PRIMARY KEY,
-    user_id INT(11) NOT NULL,
-    api_key VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `key_value` varchar(64) NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_used` timestamp NULL DEFAULT NULL,
+  `active` tinyint(1) NOT NULL DEFAULT '1',
+  `user_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `key_value` (`key_value`)
 )";
 
-if ($conn->query($sql) === TRUE) {
-    //echo "Table api_keys created successfully";
-} else {
+if ($conn->query($sql) != TRUE) {
     echo "Error creating table: " . $conn->error;
 }

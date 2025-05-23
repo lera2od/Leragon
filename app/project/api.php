@@ -1,28 +1,75 @@
 <?php
+
+include $_SERVER["DOCUMENT_ROOT"] . "/include/mysql.php";
 include "../include/lib.php";
 
-apiLoginCheck();
+
+$input = json_decode(file_get_contents('php://input'), true);
+$action = $input['action'] ?? null;
+
+$onlyApiKeyActions = [
+    "ContainerLogs"
+];
+
 
 header('Content-Type: application/json');
+header('Cache-Control: no-cache');
 
-function checkInput($key)
-{
-    global $input;
-    if (!isset($input["$key"])) {
-        throw new Exception('Invalid request ' . $key . ' not provided');
+$isApiKeyAuth = isset($_SERVER['HTTP_X_API_KEY']) || isset($_GET['apikey']);
+$apiKey = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['apikey'] ?? null;
+
+if ($isApiKeyAuth) {
+    apiKeyValidate($apiKey);
+} else {
+    if (in_array($action, $onlyApiKeyActions)) {
+        http_response_code(403);
+        echo json_encode(["error" => "API key required for this action"]);
+        exit;
     }
+    apiLoginCheck();
 }
 
 try {
-    $input = json_decode(file_get_contents('php://input'), true);
-    $action = $input['action'] ?? null;
+    $Docker = new DockerManager();
 
-    if ($action === null) {
-        echo json_encode(['error' => 'Invalid request']);
+    if ($isApiKeyAuth && isset($_GET['action']) && $_GET['action'] === 'logs') {
+        $containerId = $_GET['container'] ?? null;
+        $tail = $_GET['tail'] ?? '100';
+        $timestamps = $_GET['timestamps'] ?? 'false';
+
+        if (!$containerId) {
+            throw new Exception('Container ID required');
+        }
+
+        set_time_limit(30);
+        ini_set('memory_limit', '128M');
+
+        $logs = $Docker->getContainerLogs(
+            $containerId,
+            true,
+            true,
+            $tail === 'all' ? 0 : (int) $tail,
+            $timestamps === 'true'
+        );
+
+        echo json_encode([
+            'success' => true,
+            'logs' => $logs
+        ]);
         exit;
     }
 
-    $Docker = new DockerManager();
+    if ($action === null) {
+        throw new Exception('Invalid request - action not specified');
+    }
+
+    function checkInput($key)
+    {
+        global $input;
+        if (!isset($input[$key])) {
+            throw new Exception('Invalid request: ' . $key . ' not provided');
+        }
+    }
 
     switch ($action) {
         case 'ContainerStart':
@@ -62,35 +109,6 @@ try {
             $result = true;
             break;
 
-        case 'ContainerLogs':
-            checkInput('containerId');
-            checkInput('tail');
-            checkInput('timestamps');
-
-            try {
-                set_time_limit(60);
-
-                $logs = $Docker->getContainerLogs(
-                    $input['containerId'],
-                    true,
-                    true,
-                    $input['tail'] === 'all' ? 0 : (int) $input['tail'],
-                    $input['timestamps']
-                );
-
-                echo json_encode([
-                    'success' => true,
-                    'logs' => $logs
-                ]);
-            } catch (Exception $e) {
-                http_response_code(503);
-                echo json_encode([
-                    'success' => false,
-                    'error' => $e->getMessage()
-                ]);
-            }
-            exit;
-
         case 'ContainerInspect':
             checkInput('containerId');
 
@@ -99,6 +117,33 @@ try {
                 'success' => true,
                 'details' => $details
             ]);
+            exit;
+
+        case 'ContainerLogs':
+            checkInput('containerId');
+            checkInput('tail');
+            checkInput('timestamps');
+
+            set_time_limit(120);
+            ini_set('memory_limit', '256M');
+
+            $Docker = new DockerManager();
+            $logs = $Docker->getContainerLogs(
+                $input['containerId'],
+                true,
+                true,
+                $input['tail'] === 'all' ? 1000 : (int) $input['tail'],
+                $input['timestamps']
+            );
+
+            header('Content-Type: application/json');
+            header('Connection: close');
+
+            echo json_encode([
+                'success' => true,
+                'logs' => $logs
+            ]);
+
             exit;
 
         case 'ImageRemove':
@@ -156,7 +201,7 @@ try {
     }
 
 } catch (Exception $e) {
-    http_response_code(400);
+    http_response_code(500);
     echo json_encode([
         'success' => false,
         'error' => $e->getMessage()

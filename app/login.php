@@ -69,26 +69,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($password !== $confirm_password) {
             $error = "Passwords do not match.";
         } else {
-            $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
-            $stmt->bind_param("s", $username);
-            $stmt->execute();
-            $result = $stmt->get_result();
+            $newApiKey = bin2hex(random_bytes(32));
+            
+            $stmt = $conn->prepare(
+                "INSERT INTO users (username, email, password, api_key) VALUES (?, ?, ?, ?)"
+            );
+            $stmt->bind_param("ssss", $username, $email, $password_hash, $api_key);
+            if ($stmt->execute()) {
+                $user_id = $stmt->insert_id;
+                $stmt->close();
 
-            if ($result && $result->num_rows > 0) {
-                $error = "Username already exists.";
+                $stmt = $conn->prepare(
+                    "INSERT INTO api_keys (key_value, description, user_id) VALUES (?, ?)"
+                );
+                $desc = $username . "'s API Key";
+
+                $stmt->bind_param("ssi", $api_key,$desc, $user_id);
+                $stmt->execute();
+                $stmt->close();
+
+                unset($data[$ip]);
+                file_put_contents($attempts_file, json_encode($data));
+                $_SESSION["user"] = $username;
+                $_SESSION["password"] = $password_hash;
+
+                header("Location: /");
+                exit;
             } else {
-                $stmt = $conn->prepare("INSERT INTO users (username, email, password) VALUES (?, ?, ?)");
-                $stmt->bind_param("sss", $username, $email, $password_hash);
-                if ($stmt->execute()) {
-                    unset($data[$ip]);
-                    file_put_contents($attempts_file, json_encode($data));
-                    $_SESSION["user"] = $username;
-                    $_SESSION["password"] = $password_hash;
-                    header("Location: /");
-                    exit;
-                } else {
-                    $error = "Registration failed. Please try again.";
-                }
+                $error = "Registration failed. Please try again.";
             }
         }
     }
