@@ -237,7 +237,6 @@ $userApiKey = $stmt->get_result()->fetch_assoc();
         </div>
     </main>
 
-    <script src="/include/lib.js"></script>
     <script>
         async function createApiKey() {
             const description = await promptModal('API Key Description', '', 'Enter a description for this API key');

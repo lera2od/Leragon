@@ -15,8 +15,8 @@ $onlyApiKeyActions = [
 header('Content-Type: application/json');
 header('Cache-Control: no-cache');
 
-$isApiKeyAuth = isset($_SERVER['HTTP_X_API_KEY']) || isset($_GET['apikey']);
-$apiKey = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['apikey'] ?? null;
+$isApiKeyAuth = isset($_SERVER['HTTP_X_API_KEY']) || isset($_GET['apikey']) || isset($input['apikey']);
+$apiKey = $_SERVER['HTTP_X_API_KEY'] ?? $_GET['apikey'] ?? $input['apikey'] ?? null;
 
 if ($isApiKeyAuth) {
     apiKeyValidate($apiKey);
@@ -150,9 +150,33 @@ try {
             checkInput('imageId');
 
             $Docker->removeImage($input['imageId']);
-
             $result = true;
             break;
+
+        case 'ImagePull':
+            checkInput('imageName');
+            $stream = $input['stream'] ?? false;
+            
+            if ($stream) {
+                echo json_encode([
+                    'success' => true,
+                    'streamUrl' => '/project/stream.php?action=pull&image=' . urlencode($input['imageName']) 
+                        . ($isApiKeyAuth ? '&apikey=' . $apiKey : '')
+                ]);
+                exit;
+            }
+            
+            $result = $Docker->pullImage($input['imageName']);
+            break;
+
+        case 'ImageInspect':
+            checkInput('imageId');
+            $details = $Docker->inspectImage($input['imageId']);
+            echo json_encode([
+                'success' => true,
+                'details' => $details
+            ]);
+            exit;
 
         case 'NetworkRemove':
             checkInput('networkId');
@@ -185,6 +209,28 @@ try {
                 'success' => true,
                 'details' => $details
             ]);
+            exit;
+
+        case 'SearchDockerHub':
+            checkInput('query');
+            $query = $input['query'];
+            $page = $input['page'] ?? 1;
+            $pageSize = $input['pageSize'] ?? 10;
+
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, "https://hub.docker.com/v2/search/repositories/?query=" . urlencode($query) . "&page=" . $page . "&page_size=" . $pageSize);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            curl_close($ch);
+
+            if ($httpCode !== 200) {
+                throw new Exception('Docker Hub API request failed');
+            }
+
+            echo $response;
             exit;
 
         default:

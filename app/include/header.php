@@ -76,7 +76,7 @@
     <?php
     $sidebarMenu = [
         ['label' => 'Projects', 'url' => '/'],
-        ['label' => 'Images', 'url' => null],
+        ['label' => 'Images', 'url' => '/images.php'],
         ['label' => 'Networks', 'url' => null],
         ['label' => 'Volumes', 'url' => null],
         ['label' => 'Logs', 'url' => null],
@@ -90,25 +90,25 @@
         <ul class="sidebar-menu">
             <?php foreach ($sidebarMenu as $item): ?>
                 <?php
-                    $isActive = false;
-                    if (!$activeFound && $item['url']) {
-                        if ($item['url'] === '/') {
-                            $isActive = $currentUrl === '/';
-                        } else {
-                            $isActive = strpos($currentUrl, $item['url']) === 0;
-                        }
-                        if ($isActive) {
-                            $activeFound = true;
-                        }
+                $isActive = false;
+                if (!$activeFound && $item['url']) {
+                    if ($item['url'] === '/') {
+                        $isActive = $currentUrl === '/';
+                    } else {
+                        $isActive = strpos($currentUrl, $item['url']) === 0;
                     }
+                    if ($isActive) {
+                        $activeFound = true;
+                    }
+                }
                 ?>
                 <?php if ($item['url']): ?>
                     <a href="<?= htmlspecialchars($item['url']) ?>">
-                <?php endif; ?>
-                <li class="sidebar-menu-item<?= $isActive ? ' active' : '' ?>">
-                    <?= htmlspecialchars($item['label']) ?>
-                </li>
-                <?php if ($item['url']): ?>
+                    <?php endif; ?>
+                    <li class="sidebar-menu-item<?= $isActive ? ' active' : '' ?>">
+                        <?= htmlspecialchars($item['label']) ?>
+                    </li>
+                    <?php if ($item['url']): ?>
                     </a>
                 <?php endif; ?>
             <?php endforeach; ?>

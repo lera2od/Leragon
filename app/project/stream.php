@@ -80,7 +80,7 @@ if ($action === 'logs') {
             CURLOPT_UNIX_SOCKET_PATH => '/var/run/docker.sock',
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_HEADER => false,
-            CURLOPT_TIMEOUT => 0, // No timeout for streaming
+            CURLOPT_TIMEOUT => 0,
             CURLOPT_CONNECTTIMEOUT => 10,
             CURLOPT_NOSIGNAL => 1,
             CURLOPT_WRITEFUNCTION => function ($ch, $data) {
@@ -137,4 +137,69 @@ if ($action === 'logs') {
     }
     
     sendEvent("Disconnected from container logs", 'disconnected');
+} elseif ($action === 'pull') {
+    if (!isset($_GET['image'])) {
+        sendError("No image specified");
+        exit;
+    }
+
+    $imageName = $_GET['image'];
+
+    try {
+        set_time_limit(0);
+        ignore_user_abort(false);
+
+        $Docker = new DockerManager();
+        
+        $apiVersion = 'v1.41';
+        $encodedImage = urlencode($imageName);
+
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL => "http://localhost/{$apiVersion}/images/create?fromImage={$encodedImage}",
+            CURLOPT_UNIX_SOCKET_PATH => '/var/run/docker.sock',
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => false,
+            CURLOPT_HEADER => false,
+            CURLOPT_TIMEOUT => 0,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_NOSIGNAL => 1,
+            CURLOPT_WRITEFUNCTION => function ($ch, $data) {
+                if (connection_aborted()) {
+                    return 0;
+                }
+
+                $lines = explode("\n", $data);
+                foreach ($lines as $line) {
+                    if (trim($line) !== '') {
+                        $decoded = json_decode($line, true);
+                        if ($decoded && isset($decoded['status'])) {
+                            sendEvent(json_encode($decoded));
+                        }
+                    }
+                }
+                
+                return strlen($data);
+            }
+        ]);
+
+        sendEvent("Starting image pull", 'connected');
+
+        $result = curl_exec($ch);
+        $error = curl_error($ch);
+        $errno = curl_errno($ch);
+        
+        curl_close($ch);
+
+        if ($errno !== 0) {
+            sendError("cURL error ({$errno}): {$error}");
+        } elseif ($result === false) {
+            sendError("Failed to connect to Docker daemon");
+        }
+
+    } catch (Exception $e) {
+        sendError("Exception: " . $e->getMessage());
+    }
+    
+    sendEvent("Image pull completed", 'disconnected');
 }

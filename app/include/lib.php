@@ -490,6 +490,17 @@ class DockerManager
         $this->request('DELETE', "/images/{$imageId}{$query}");
         return true;
     }
+
+    /**
+     * Inspect an image
+     * 
+     * @param string $imageId Image ID or name
+     * @return array Image details
+     */
+    public function inspectImage($imageId)
+    {
+        return $this->request('GET', "/images/{$imageId}/json");
+    }
 }
 
 class ProjectData
